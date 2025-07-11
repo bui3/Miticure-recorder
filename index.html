@@ -23,9 +23,12 @@
 
     <div class="history-container">
         <h2>Medication History</h2>
-        <ul id="historyList">
-            <!-- History items will be injected here by JavaScript -->
-        </ul>
+        <div id="calendar-container" class="calendar-container">
+            <!-- Calendar will be generated here by JavaScript -->
+        </div>
+        <div class="calendar-legend">
+            Less <span class="color-box level-0"></span><span class="color-box level-1"></span><span class="color-box level-2"></span><span class="color-box level-3"></span><span class="color-box level-4"></span> More
+        </div>
         <button id="clearHistoryBtn">Clear History</button>
     </div>
     <script src="script.js"></script>

@@ -8,8 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const timerEl = document.getElementById('timer');
     const startBtn = document.getElementById('startBtn');
     const resetBtn = document.getElementById('resetBtn');
-    const historyList = document.getElementById('historyList');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    const calendarContainer = document.getElementById('calendar-container');
 
     let timerInterval;
     let timeoutId;
@@ -52,33 +52,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
+    function renderCalendar() {
+        calendarContainer.innerHTML = ''; // Clear previous calendar
+
+        const countsByDay = {};
+        medicationHistory.forEach(timestamp => {
+            const date = new Date(timestamp);
+            const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+            countsByDay[dateString] = (countsByDay[dateString] || 0) + 1;
+        });
+
+        const today = new Date();
+        const endDate = new Date(today);
+        const startDate = new Date(today);
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate.setDate(startDate.getDate() + 1);
+
+        // Add empty cells for the first day's week alignment
+        for (let i = 0; i < startDate.getDay(); i++) {
+            calendarContainer.appendChild(document.createElement('div'));
+        }
+
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const dateString = d.toISOString().split('T')[0];
+            const count = countsByDay[dateString] || 0;
+
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+
+            let level = 0;
+            if (count > 0) level = 1;
+            if (count > 1) level = 2;
+            if (count > 2) level = 3;
+            if (count > 3) level = 4;
+            cell.classList.add(`level-${level}`);
+
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltip';
+            const dateFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            tooltip.textContent = `${count} dose(s) on ${dateFormatted}`;
+            cell.appendChild(tooltip);
+
+            calendarContainer.appendChild(cell);
+        }
+    }
+
     function loadHistory() {
         const storedHistory = localStorage.getItem(HISTORY_KEY);
         if (storedHistory) {
             medicationHistory = JSON.parse(storedHistory);
-            historyList.innerHTML = ''; // Clear list before rendering
-            medicationHistory.forEach(addHistoryEntryToDOM);
         }
+        renderCalendar();
         toggleClearButton();
-    }
-
-    function addHistoryEntryToDOM(timestamp) {
-        const date = new Date(timestamp);
-        const formattedDate = date.toLocaleString('en-US', {
-            weekday: 'short', year: 'numeric', month: 'short',
-            day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
-        });
-
-        const li = document.createElement('li');
-        li.textContent = `Taken on: ${formattedDate}`;
-        historyList.prepend(li); // Add new entries to the top
     }
 
     function saveNewHistoryEntry() {
         const timestamp = new Date().getTime();
         medicationHistory.push(timestamp);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(medicationHistory));
-        addHistoryEntryToDOM(timestamp);
+        renderCalendar();
         toggleClearButton();
     }
 
@@ -86,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Are you sure you want to clear all history?')) {
             medicationHistory = [];
             localStorage.removeItem(HISTORY_KEY);
-            historyList.innerHTML = '';
+            renderCalendar();
             toggleClearButton();
         }
     }
