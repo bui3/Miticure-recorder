@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007aff"/>
+    <title>Miticure Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <h1>Miticure Medication Timer</h1>
+        <div id="status-display">
+            <p id="instruction">Press "Start" to begin.</p>
+            <h2 id="timer"></h2>
+        </div>
+        <div class="buttons">
+            <button id="startBtn">Start</button>
+            <button id="resetBtn" style="display: none;">Reset</button>
+        </div>
+    </div>
+
+    <div class="history-container">
+        <h2>Medication History</h2>
+        <ul id="historyList">
+            <!-- History items will be injected here by JavaScript -->
+        </ul>
+        <button id="clearHistoryBtn">Clear History</button>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

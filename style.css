@@ -1,0 +1,97 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px 0;
+    background-color: #f0f2f5;
+    color: #333;
+}
+
+.app-container {
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+}
+
+h1 {
+    margin-top: 0;
+    font-size: 1.5em;
+}
+
+#status-display {
+    margin: 20px 0;
+    min-height: 100px;
+}
+
+#instruction {
+    font-size: 1.2em;
+    color: #555;
+}
+
+#timer {
+    font-size: 3em;
+    margin: 10px 0;
+    color: #007aff;
+}
+
+.buttons button {
+    font-size: 1em;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+#startBtn { background-color: #007aff; }
+#startBtn:hover { background-color: #005ecb; }
+#resetBtn { background-color: #ff3b30; }
+#resetBtn:hover { background-color: #c70000; }
+
+.history-container {
+    text-align: left;
+    background: white;
+    padding: 20px 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    margin-top: 20px;
+}
+
+.history-container h2 {
+    margin-top: 0;
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+}
+
+#historyList {
+    list-style-type: none;
+    padding: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+}
+
+#historyList li {
+    padding: 10px 5px;
+    border-bottom: 1px solid #eee;
+}
+
+#clearHistoryBtn {
+    display: none; /* Hidden by default, shown via JS */
+    margin: 20px auto 0;
+    background-color: #6c757d;
+}
+#clearHistoryBtn:hover { background-color: #5a6268; }
