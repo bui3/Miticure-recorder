@@ -12,21 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const calendarContainer = document.getElementById('calendar-container');
 
     let timerInterval;
-    let timeoutId;
     let medicationHistory = [];
     const HISTORY_KEY = 'miticureHistory';
-
-    function showNotification(title, body) {
-        // Don't show notifications if the window is focused
-        if (document.hasFocus()) return;
-
-        if (Notification.permission === 'granted') {
-            new Notification(title, { body });
-        } else {
-            // Fallback for when notifications are not granted
-            alert(`${title}\n${body}`);
-        }
-    }
+    const TIMER_STATE_KEY = 'miticureTimerState';
 
     function formatTime(seconds) {
         const mins = Math.floor(seconds / 60);
@@ -38,14 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
         timerEl.textContent = formatTime(seconds);
     }
 
-    function startTimer(duration, onTick, onEnd) {
-        let remaining = duration;
-        updateTimerDisplay(remaining);
+    function startTimer(endTime, onTick, onEnd) {
+        clearInterval(timerInterval);
 
         timerInterval = setInterval(() => {
-            remaining--;
-            onTick(remaining);
-            if (remaining <= 0) {
+            const remaining = Math.round((endTime - Date.now()) / 1000);
+            if (remaining >= 0) {
+                onTick(remaining);
+            } else {
                 clearInterval(timerInterval);
                 onEnd();
             }
@@ -68,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startDate.setFullYear(startDate.getFullYear() - 1);
         startDate.setDate(startDate.getDate() + 1);
 
-        // Add empty cells for the first day's week alignment
         for (let i = 0; i < startDate.getDay(); i++) {
             calendarContainer.appendChild(document.createElement('div'));
         }
@@ -129,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetState() {
         clearInterval(timerInterval);
-        clearTimeout(timeoutId);
+        localStorage.removeItem(TIMER_STATE_KEY);
         instructionEl.textContent = 'Press "Start" to begin.';
         timerEl.textContent = '';
         startBtn.style.display = 'inline-block';
@@ -138,7 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startMedicationProcess() {
-        // Record the medication intake time
         saveNewHistoryEntry();
 
         startBtn.disabled = true;
@@ -146,26 +132,94 @@ document.addEventListener('DOMContentLoaded', () => {
         resetBtn.style.display = 'inline-block';
 
         // Step 1: 1 minute under the tongue
+        const step1Duration = 60;
+        const step1EndTime = Date.now() + step1Duration * 1000;
+        const timerState = {
+            step: 1,
+            endTime: step1EndTime
+        };
+        localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(timerState));
+        runStep1(timerState);
+    }
+
+    function runStep1(timerState) {
         instructionEl.textContent = '1. Keep medicine under your tongue.';
-        startTimer(60, updateTimerDisplay, () => {
-            // Step 2: Swallow
+        startTimer(timerState.endTime, updateTimerDisplay, () => {
             instructionEl.textContent = '2. Swallow now.';
             timerEl.textContent = '';
-            showNotification('Time to Swallow!', 'Please swallow the medicine now.');
-            
-            timeoutId = setTimeout(step3_noFoodOrDrink, 2000);
+            // The service worker will show the notification
+            setTimeout(startStep3, 2000);
+        });
+
+        navigator.serviceWorker.ready.then(registration => {
+            const remainingDuration = (timerState.endTime - Date.now()) / 1000;
+            if (remainingDuration > 0) {
+                registration.active.postMessage({
+                    action: 'startTimer',
+                    duration: remainingDuration,
+                    title: 'Time to Swallow!',
+                    body: 'Please swallow the medicine now.'
+                });
+            }
         });
     }
 
-    function step3_noFoodOrDrink() {
+    function startStep3() {
         // Step 3: 5 minutes no food or drink
+        const step3Duration = 300;
+        const step3EndTime = Date.now() + step3Duration * 1000;
+        const timerState = {
+            step: 3,
+            endTime: step3EndTime
+        };
+        localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(timerState));
+        runStep3(timerState);
+    }
+    
+    function runStep3(timerState) {
         instructionEl.textContent = '3. Do not eat or drink anything.';
-        startTimer(300, updateTimerDisplay, () => {
+        startTimer(timerState.endTime, updateTimerDisplay, () => {
             instructionEl.textContent = 'All done! You can now eat and drink.';
             timerEl.textContent = '✅';
-            showNotification('All Done!', 'You can now eat and drink freely.');
             resetState();
         });
+
+        navigator.serviceWorker.ready.then(registration => {
+            const remainingDuration = (timerState.endTime - Date.now()) / 1000;
+            if (remainingDuration > 0) {
+                registration.active.postMessage({
+                    action: 'startTimer',
+                    duration: remainingDuration,
+                    title: 'All Done!',
+                    body: 'You can now eat and drink freely.'
+                });
+            }
+        });
+    }
+
+    function restoreTimerState() {
+        const timerStateJSON = localStorage.getItem(TIMER_STATE_KEY);
+        if (!timerStateJSON) {
+            return;
+        }
+
+        const timerState = JSON.parse(timerStateJSON);
+        const remaining = (timerState.endTime - Date.now()) / 1000;
+
+        if (remaining <= 0) {
+            localStorage.removeItem(TIMER_STATE_KEY);
+            return;
+        }
+        
+        startBtn.disabled = true;
+        startBtn.style.display = 'none';
+        resetBtn.style.display = 'inline-block';
+
+        if (timerState.step === 1) {
+            runStep1(timerState);
+        } else if (timerState.step === 3) {
+            runStep3(timerState);
+        }
     }
 
     startBtn.addEventListener('click', startMedicationProcess);
@@ -174,4 +228,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Load
     loadHistory();
+    restoreTimerState();
 });

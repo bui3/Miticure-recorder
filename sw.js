@@ -27,3 +27,16 @@ self.addEventListener('fetch', event => {
             .then(response => response || fetch(event.request))
     );
 });
+
+self.addEventListener('message', event => {
+    if (event.data && event.data.action === 'startTimer') {
+        const { duration, title, body } = event.data;
+        setTimeout(() => {
+            self.registration.showNotification(title, {
+                body: body,
+                icon: './icons/icon-192.png',
+                vibrate: [200, 100, 200], // Vibrate pattern
+            });
+        }, duration * 1000);
+    }
+});
