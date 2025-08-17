@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const startBtn = document.getElementById('startBtn');
     const resetBtn = document.getElementById('resetBtn');
     const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-    const calendarContainer = document.getElementById('calendar-container');
+    const historyListContainer = document.getElementById('history-list-container');
 
     let timerInterval;
     let medicationHistory = [];
@@ -40,48 +40,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
 
-    function renderCalendar() {
-        calendarContainer.innerHTML = ''; // Clear previous calendar
+    function renderHistoryList() {
+        historyListContainer.innerHTML = ''; // Clear previous list
 
-        const countsByDay = {};
-        medicationHistory.forEach(timestamp => {
+        const reversedHistory = [...medicationHistory].reverse();
+
+        reversedHistory.forEach(timestamp => {
             const date = new Date(timestamp);
-            const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
-            countsByDay[dateString] = (countsByDay[dateString] || 0) + 1;
+            const dateString = date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            const timeString = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.textContent = `${dateString} - ${timeString}`;
+
+            historyListContainer.appendChild(historyItem);
         });
-
-        const today = new Date();
-        const endDate = new Date(today);
-        const startDate = new Date(today);
-        startDate.setFullYear(startDate.getFullYear() - 1);
-        startDate.setDate(startDate.getDate() + 1);
-
-        for (let i = 0; i < startDate.getDay(); i++) {
-            calendarContainer.appendChild(document.createElement('div'));
-        }
-
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            const dateString = d.toISOString().split('T')[0];
-            const count = countsByDay[dateString] || 0;
-
-            const cell = document.createElement('div');
-            cell.className = 'day-cell';
-
-            let level = 0;
-            if (count > 0) level = 1;
-            if (count > 1) level = 2;
-            if (count > 2) level = 3;
-            if (count > 3) level = 4;
-            cell.classList.add(`level-${level}`);
-
-            const tooltip = document.createElement('span');
-            tooltip.className = 'tooltip';
-            const dateFormatted = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-            tooltip.textContent = `${count} dose(s) on ${dateFormatted}`;
-            cell.appendChild(tooltip);
-
-            calendarContainer.appendChild(cell);
-        }
     }
 
     function loadHistory() {
@@ -89,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storedHistory) {
             medicationHistory = JSON.parse(storedHistory);
         }
-        renderCalendar();
+        renderHistoryList();
         toggleClearButton();
     }
 
@@ -97,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const timestamp = new Date().getTime();
         medicationHistory.push(timestamp);
         localStorage.setItem(HISTORY_KEY, JSON.stringify(medicationHistory));
-        renderCalendar();
+        renderHistoryList();
         toggleClearButton();
     }
 
@@ -105,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Are you sure you want to clear all history?')) {
             medicationHistory = [];
             localStorage.removeItem(HISTORY_KEY);
-            renderCalendar();
+            renderHistoryList();
             toggleClearButton();
         }
     }

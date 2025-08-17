@@ -1,4 +1,4 @@
-const CACHE_NAME = 'miticure-timer-cache-v1';
+const CACHE_NAME = 'miticure-timer-cache-v2'; // Bump cache name
 const urlsToCache = [
     './',
     './index.html',
@@ -9,7 +9,6 @@ const urlsToCache = [
     './icons/icon-512.png'
 ];
 
-// Install a service worker
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -17,10 +16,25 @@ self.addEventListener('install', event => {
                 console.log('Opened cache');
                 return cache.addAll(urlsToCache);
             })
+            .then(() => self.skipWaiting()) // Force activation of new SW
     );
 });
 
-// Cache and return requests
+self.addEventListener('activate', event => {
+    // Clean up old caches
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => self.clients.claim()) // Take control of open clients
+    );
+});
+
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
@@ -35,7 +49,7 @@ self.addEventListener('message', event => {
             self.registration.showNotification(title, {
                 body: body,
                 icon: './icons/icon-192.png',
-                vibrate: [200, 100, 200], // Vibrate pattern
+                vibrate: [200, 100, 200],
             });
         }, duration * 1000);
     }
